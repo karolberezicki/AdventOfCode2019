@@ -16,6 +16,7 @@ namespace Day03
             var wire2 = GetPointsForWire(input[1]);
 
             var intersections = new HashSet<(int X, int Y)>(wire1.Select(p => (p.X, p.Y)).Intersect(wire2.Select(p => (p.X, p.Y))));
+            
             var closestIntersection = intersections.Min(p => Math.Abs(p.X) + Math.Abs(p.Y));
 
             var fewestStepsIntersection = intersections
@@ -26,38 +27,38 @@ namespace Day03
             Console.WriteLine($"Part2 {fewestStepsIntersection}");
         }
 
-        private static HashSet<Point> GetPointsForWire(List<string> instructions)
+        private static HashSet<(int X, int Y, int Step)> GetPointsForWire(List<string> instructions)
         {
-            var currentPoint = new Point { X = 0, Y = 0 };
-            var wire = new HashSet<Point>();
+            var currentPoint = (X : 0, Y: 0, Step: 0);
+            var wire = new HashSet<(int X, int Y, int Step)>();
 
             foreach (var instruction in instructions)
             {
                 var direction = instruction[0];
                 var distance = int.Parse(string.Join("", instruction.Skip(1)));
 
-                var move = new List<Point>();
+                var move = new List<(int X, int Y, int Step)>();
 
                 switch (direction)
                 {
                     case 'R':
                         move = Enumerable.Range(1, distance)
-                            .Select(p => new Point { X = currentPoint.X + p, Y = currentPoint.Y, Step = currentPoint.Step + p })
+                            .Select(p => (X : currentPoint.X + p, currentPoint.Y, Step : currentPoint.Step + p))
                             .ToList();
                         break;
                     case 'L':
                         move = Enumerable.Range(1, distance)
-                            .Select(p => new Point { X = currentPoint.X - p, Y = currentPoint.Y, Step = currentPoint.Step + p })
+                            .Select(p => (X: currentPoint.X - p, currentPoint.Y, Step: currentPoint.Step + p))
                             .ToList();
                         break;
                     case 'U':
                         move = Enumerable.Range(1, distance)
-                            .Select(p => new Point { X = currentPoint.X, Y = currentPoint.Y + p, Step = currentPoint.Step + p })
+                            .Select(p => (currentPoint.X, Y: currentPoint.Y + p, Step: currentPoint.Step + p))
                             .ToList();
                         break;
                     case 'D':
                         move = Enumerable.Range(1, distance)
-                            .Select(p => new Point { X = currentPoint.X, Y = currentPoint.Y - p, Step = currentPoint.Step + p })
+                            .Select(p => (currentPoint.X, Y: currentPoint.Y - p, Step: currentPoint.Step + p))
                             .ToList();
                         break;
                 }
