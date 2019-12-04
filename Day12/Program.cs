@@ -1,12 +1,16 @@
 ﻿using System;
+using System.Linq;
 
 namespace Day12
 {
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        public static void Main()
         {
-            Console.WriteLine("Hello World!");
+            var input = System.IO.File.ReadAllLines("input.txt")
+                .ToList();
+
+            Console.WriteLine("");
         }
     }
 }
