@@ -25,22 +25,22 @@ namespace Day07
             var amplifiers = new List<int> { 0, 1, 2, 3, 4 };
             var amplifiersPermutations = Permutations.GeneratePermutations(amplifiers);
 
-            var amplifiersWithSignals = amplifiersPermutations.Select(permutation =>
+            var signals = amplifiersPermutations.Select(permutation =>
             {
-                var inputValue = 0;
+                var signal = 0;
                 foreach (var phaseSetting in permutation)
                 {
                     var amp = new IntCodeComputer(memoryState);
                     amp.Inputs.Add(phaseSetting);
-                    amp.Inputs.Add(inputValue);
+                    amp.Inputs.Add(signal);
                     amp.RunIntCode();
-                    inputValue = amp.Output.Last();
+                    signal = amp.Output.Last();
                 }
 
-                return (Amplifier: permutation, Signal: inputValue);
+                return signal;
             });
 
-            return amplifiersWithSignals.OrderByDescending(t => t.Signal).First().Signal;
+            return signals.Max();
         }
 
         private static int Part2(IReadOnlyCollection<int> memoryState)
@@ -48,9 +48,7 @@ namespace Day07
             var amplifiers = new List<int> { 9, 8, 7, 6, 5 };
             var amplifiersPermutations = Permutations.GeneratePermutations(amplifiers);
 
-            var amplifiersWithSignals = new List<(List<int> Amplifier, int Signal)>();
-
-            foreach (var permutation in amplifiersPermutations)
+            var signals = amplifiersPermutations.Select(permutation =>
             {
                 var amps = new List<IntCodeComputer>();
                 foreach (var phaseSetting in permutation)
@@ -60,22 +58,22 @@ namespace Day07
                     amps.Add(amp);
                 }
 
-                var inputValue = 0;
+                var signal = 0;
 
                 while (!amps.Last().IsHalted)
                 {
                     foreach (var amp in amps)
                     {
-                        amp.Inputs.Add(inputValue);
+                        amp.Inputs.Add(signal);
                         amp.RunIntCode();
-                        inputValue = amp.Output.Last();
+                        signal = amp.Output.Last();
                     }
                 }
 
-                amplifiersWithSignals.Add((Amplifier: permutation, Signal: inputValue));
-            }
+                return signal;
+            });
 
-            return amplifiersWithSignals.OrderByDescending(t => t.Signal).First().Signal;
+            return signals.Max();
         }
     }
 }
