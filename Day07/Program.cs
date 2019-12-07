@@ -30,9 +30,7 @@ namespace Day07
                 var signal = 0;
                 foreach (var phaseSetting in permutation)
                 {
-                    var amp = new IntCodeComputer(memoryState);
-                    amp.Inputs.Add(phaseSetting);
-                    amp.Inputs.Add(signal);
+                    var amp = new IntCodeComputer(memoryState, phaseSetting, signal);
                     amp.RunIntCode();
                     signal = amp.Output.Last();
                 }
@@ -50,13 +48,9 @@ namespace Day07
 
             var signals = amplifiersPermutations.Select(permutation =>
             {
-                var amps = new List<IntCodeComputer>();
-                foreach (var phaseSetting in permutation)
-                {
-                    var amp = new IntCodeComputer(memoryState);
-                    amp.Inputs.Add(phaseSetting);
-                    amps.Add(amp);
-                }
+                var amps = permutation
+                    .Select(phaseSetting => new IntCodeComputer(memoryState, phaseSetting))
+                    .ToList();
 
                 var signal = 0;
 

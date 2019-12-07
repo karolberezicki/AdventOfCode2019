@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Day07
+namespace Day05
 {
     public class IntCodeComputer
     {
