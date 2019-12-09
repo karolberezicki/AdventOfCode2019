@@ -1,80 +1,59 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using IntCode;
+using System;
 using System.Linq;
 
 namespace Day02
 {
     public class Program
     {
-        private const int ApolloLandingDate = 19690720;
+        private const long ApolloLandingDate = 19690720;
 
         public static void Main()
         {
             var input = System.IO.File.ReadAllText("input.txt");
             var memoryState = input.Split(",")
-                .Select(int.Parse)
+                .Select(long.Parse)
                 .ToList();
 
             var noun = 12;
             var verb = 2;
 
-            var part1 = RunIntCode(memoryState, noun, verb);
+            var icc = new IntCodeComputer(memoryState);
+            icc.SetNoun(noun);
+            icc.SetVerb(verb);
+            icc.RunTillHalt();
 
-            while (RunIntCode(memoryState, noun + 1, verb) < ApolloLandingDate)
+            var part1 = icc.ReadIntCode(0);
+
+            long zeroMemoryCell;
+
+            do
             {
                 noun++;
-            }
+                icc = new IntCodeComputer(memoryState);
+                icc.SetNoun(noun);
+                icc.SetVerb(verb);
+                icc.RunTillHalt();
+                zeroMemoryCell = icc.ReadIntCode(0);
+            } while (zeroMemoryCell < ApolloLandingDate);
 
-            while (RunIntCode(memoryState, noun, verb + 1) <= ApolloLandingDate)
+            noun--;
+
+            do
             {
                 verb++;
-            }
+                icc = new IntCodeComputer(memoryState);
+                icc.SetNoun(noun);
+                icc.SetVerb(verb);
+                icc.RunTillHalt();
+                zeroMemoryCell = icc.ReadIntCode(0);
+            } while (zeroMemoryCell < ApolloLandingDate);
+
 
             var part2 = 100 * noun + verb;
 
             Console.WriteLine($"Part1 {part1}");
             Console.WriteLine($"Part2 {part2}");
-        }
-
-        private static int RunIntCode(IEnumerable<int> memoryState, int noun, int verb)
-        {
-            var intCode = memoryState.ToList();
-
-            var instructionPointer = 0;
-
-            intCode[1] = noun;
-            intCode[2] = verb;
-
-            while (true)
-            {
-                var instruction = intCode[instructionPointer];
-
-                switch (instruction)
-                {
-                    case 1:
-                        {
-                            var address1 = intCode[instructionPointer + 1];
-                            var address2 = intCode[instructionPointer + 2];
-                            var resultAddress = intCode[instructionPointer + 3];
-                            var sum = intCode[address1] + intCode[address2];
-                            intCode[resultAddress] = sum;
-                            break;
-                        }
-                    case 2:
-                        {
-                            var address1 = intCode[instructionPointer + 1];
-                            var address2 = intCode[instructionPointer + 2];
-                            var resultAddress = intCode[instructionPointer + 3];
-                            var product = intCode[address1] * intCode[address2];
-                            intCode[resultAddress] = product;
-                            break;
-                        }
-                    case 99:
-                        return intCode[0];
-                }
-
-                instructionPointer += 4;
-            }
         }
     }
 }

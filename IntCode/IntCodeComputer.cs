@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Day09
+namespace IntCode
 {
     public class IntCodeComputer
     {
@@ -41,14 +41,14 @@ namespace Day09
             {
                 ExecutedInstructions++;
                 var instruction = _intCode[_instructionPointer].ToString().PadLeft(5, '0');
-                var opCode = GetNumber(instruction[3]) * 10 + GetNumber(instruction[4]);
-                var modeParam1 = GetNumber(instruction[2]);
-                var modeParam2 = GetNumber(instruction[1]);
-                var modeParam3 = GetNumber(instruction[0]);
+                var opCode = (OpCode)(GetNumber(instruction[3]) * 10 + GetNumber(instruction[4]));
+                var modeParam1 = (Mode)GetNumber(instruction[2]);
+                var modeParam2 = (Mode)GetNumber(instruction[1]);
+                var modeParam3 = (Mode)GetNumber(instruction[0]);
 
                 switch (opCode)
                 {
-                    case 1: // sum
+                    case OpCode.Sum:
                         {
                             var param1Value = GetParamValue(modeParam1, _instructionPointer + 1);
                             var param2Value = GetParamValue(modeParam2, _instructionPointer + 2);
@@ -57,7 +57,7 @@ namespace Day09
                             _instructionPointer += 4;
                             break;
                         }
-                    case 2: // multiply
+                    case OpCode.Multiply:
                         {
                             var param1Value = GetParamValue(modeParam1, _instructionPointer + 1);
                             var param2Value = GetParamValue(modeParam2, _instructionPointer + 2);
@@ -66,35 +66,35 @@ namespace Day09
                             _instructionPointer += 4;
                             break;
                         }
-                    case 3: // input
+                    case OpCode.Input:
                         {
                             WriteMem(modeParam1, _instructionPointer + 1, Inputs[(int)_inputPointer]);
                             _inputPointer++;
                             _instructionPointer += 2;
                             break;
                         }
-                    case 4: // output
+                    case OpCode.Output:
                         {
                             var param2Value = GetParamValue(modeParam1, _instructionPointer + 1);
                             Output.Add(param2Value);
                             _instructionPointer += 2;
                             return;
                         }
-                    case 5: // jump-if-true
+                    case OpCode.JumpIfTrue:
                         {
                             var param1Value = GetParamValue(modeParam1, _instructionPointer + 1);
                             var param2Value = GetParamValue(modeParam2, _instructionPointer + 2);
                             _instructionPointer = param1Value != 0 ? param2Value : _instructionPointer + 3;
                             break;
                         }
-                    case 6: // jump-if-false
+                    case OpCode.JumpIfFalse:
                         {
                             var param1Value = GetParamValue(modeParam1, _instructionPointer + 1);
                             var param2Value = GetParamValue(modeParam2, _instructionPointer + 2);
                             _instructionPointer = param1Value == 0 ? param2Value : _instructionPointer + 3;
                             break;
                         }
-                    case 7: // less than
+                    case OpCode.LessThan:
                         {
                             var param1Value = GetParamValue(modeParam1, _instructionPointer + 1);
                             var param2Value = GetParamValue(modeParam2, _instructionPointer + 2);
@@ -102,7 +102,7 @@ namespace Day09
                             _instructionPointer += 4;
                             break;
                         }
-                    case 8: // equals
+                    case OpCode.Equals:
                         {
 
                             var param1Value = GetParamValue(modeParam1, _instructionPointer + 1);
@@ -111,41 +111,42 @@ namespace Day09
                             _instructionPointer += 4;
                             break;
                         }
-                    case 9: // relative base offset
+                    case OpCode.RelativeBaseOffset:
                         {
                             var param1Value = GetParamValue(modeParam1, _instructionPointer + 1);
                             _relativeBase += param1Value;
                             _instructionPointer += 2;
                             break;
                         }
-                    case 99: // halt
+                    case OpCode.Halt:
                         IsHalted = true;
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException($"!Unknown OpCode {opCode:##}!");
+                        throw new ArgumentOutOfRangeException($"!Unknown OpCode {opCode}!");
                 }
             }
         }
 
-        private long GetParamValue(long mode, long parameter)
+        private long GetParamValue(Mode mode, long parameter)
         {
+
             switch (mode)
             {
-                case 0:
+                case Mode.Position:
                     {
                         return ReadMem(ReadMem(parameter));
                     }
-                case 1:
+                case Mode.Immediate:
                     {
                         return ReadMem(parameter);
                     }
-                case 2:
+                case Mode.Relative:
                     {
                         return ReadMem(ReadMem(parameter) + _relativeBase);
                     }
                 default:
                     {
-                        throw new ArgumentOutOfRangeException($"!Unknown parameter mode {mode:##}!");
+                        throw new ArgumentOutOfRangeException($"!Unknown parameter mode {mode}!");
                     }
             }
         }
@@ -155,15 +156,30 @@ namespace Day09
             return _intCode.ContainsKey(address) ? _intCode[address] : 0;
         }
 
-        private void WriteMem(long mode, long parameter, long value)
+        private void WriteMem(Mode mode, long parameter, long value)
         {
-            var address = mode == 2 ? ReadMem(parameter) + _relativeBase : ReadMem(parameter);
+            var address = mode == Mode.Relative ? ReadMem(parameter) + _relativeBase : ReadMem(parameter);
             _intCode[address] = value;
         }
 
         private static int GetNumber(char character)
         {
             return character - '0';
+        }
+
+        public void SetNoun(long noun)
+        {
+            _intCode[1] = noun;
+        }
+
+        public void SetVerb(long verb)
+        {
+            _intCode[2] = verb;
+        }
+
+        public long ReadIntCode(long address)
+        {
+            return ReadMem(address);
         }
     }
 }

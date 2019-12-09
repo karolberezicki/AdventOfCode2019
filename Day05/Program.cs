@@ -1,4 +1,5 @@
-﻿using System;
+﻿using IntCode;
+using System;
 using System.Linq;
 
 namespace Day05
@@ -9,7 +10,7 @@ namespace Day05
         {
             var input = System.IO.File.ReadAllText("input.txt");
             var memoryState = input.Split(",")
-                .Select(int.Parse)
+                .Select(long.Parse)
                 .ToList();
 
             var icc = new IntCodeComputer(memoryState, 1);

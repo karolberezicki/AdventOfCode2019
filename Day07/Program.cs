@@ -1,4 +1,5 @@
-﻿using System;
+﻿using IntCode;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,7 +11,7 @@ namespace Day07
         {
             var input = System.IO.File.ReadAllText("input.txt");
             var memoryState = input.Split(",")
-                .Select(int.Parse)
+                .Select(long.Parse)
                 .ToList();
 
             var part1 = Part1(memoryState);
@@ -20,14 +21,14 @@ namespace Day07
             Console.WriteLine($"Part2 {part2}");
         }
 
-        private static int Part1(IReadOnlyCollection<int> memoryState)
+        private static long Part1(IReadOnlyCollection<long> memoryState)
         {
-            var amplifiers = new List<int> { 0, 1, 2, 3, 4 };
+            var amplifiers = new List<long> { 0, 1, 2, 3, 4 };
             var amplifiersPermutations = Permutations.GeneratePermutations(amplifiers);
 
             var signals = amplifiersPermutations.Select(permutation =>
             {
-                var signal = 0;
+                var signal = 0L;
                 foreach (var phaseSetting in permutation)
                 {
                     var amp = new IntCodeComputer(memoryState, phaseSetting, signal);
@@ -41,9 +42,9 @@ namespace Day07
             return signals.Max();
         }
 
-        private static int Part2(IReadOnlyCollection<int> memoryState)
+        private static long Part2(IReadOnlyCollection<long> memoryState)
         {
-            var amplifiers = new List<int> { 9, 8, 7, 6, 5 };
+            var amplifiers = new List<long> { 9, 8, 7, 6, 5 };
             var amplifiersPermutations = Permutations.GeneratePermutations(amplifiers);
 
             var signals = amplifiersPermutations.Select(permutation =>
@@ -52,7 +53,7 @@ namespace Day07
                     .Select(phaseSetting => new IntCodeComputer(memoryState, phaseSetting))
                     .ToList();
 
-                var signal = 0;
+                var signal = 0L;
 
                 while (!amps.Last().IsHalted)
                 {

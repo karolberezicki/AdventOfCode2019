@@ -1,4 +1,5 @@
-﻿using System;
+﻿using IntCode;
+using System;
 using System.Linq;
 
 namespace Day09
