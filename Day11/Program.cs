@@ -1,7 +1,7 @@
-﻿using System;
+﻿using IntCode;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using IntCode;
 
 namespace Day11
 {
@@ -17,18 +17,37 @@ namespace Day11
 
             var paintedPanels = PaintHull(memoryState);
 
-            var part1 = new HashSet<(int X, int Y)>(paintedPanels.Select(p => (p.X, p.Y))).Count;
+            var part1 = paintedPanels.Select(p => (p.X, p.Y)).Distinct().Count();
 
             Console.WriteLine($"Part1 {part1}");
+
+            var paintedPanels2 = PaintHull(memoryState, true);
+
+            var pixels = new HashSet<(int X, int Y)>(
+                paintedPanels2
+                    .Skip(1)
+                    .Take(paintedPanels2.Count - 2)
+                    .Where(p => p.Color == 1)
+                    .Select(p => (p.X, -p.Y)));
+
+            var maxX = pixels.Select(p => p.X).Max();
+            var maxY = pixels.Select(p => p.Y).Max();
+
+            Console.WriteLine("Part2");
+            foreach (var y in Enumerable.Range(0, maxY + 1))
+            {
+                var line = string.Join("", Enumerable.Range(0, maxX + 1)
+                    .Select(x => pixels.Contains((x, y)) ? '█' : ' '));
+                Console.WriteLine(line);
+            }
         }
 
-        private static List<(int X, int Y, int Color)> PaintHull(List<long> memoryState, bool startOnWhite = false)
+        private static List<(int X, int Y, int Color)> PaintHull(IEnumerable<long> memoryState, bool startOnWhite = false)
         {
             var paintedPanels = new List<(int X, int Y, int Color)>();
             var currentDirection = Direction.Up;
-            var currentPosition = (X: 100, Y: 100);
+            var currentPosition = (X: 0, Y: 0);
             var icc = new IntCodeComputer(memoryState);
-
 
             if (startOnWhite)
             {
@@ -48,73 +67,11 @@ namespace Day11
                 var turnDirection = (int)icc.Output.Last();
 
                 paintedPanels.Add((currentPosition.X, currentPosition.Y, colorToPaint));
-                currentDirection = Turn(currentDirection, turnDirection);
-                currentPosition = Move(currentPosition, currentDirection);
+                currentDirection = currentDirection.Turn(turnDirection);
+                currentPosition = currentDirection.Move(currentPosition);
             }
 
             return paintedPanels;
         }
-
-        public static (int X, int Y) Move((int X, int Y) currentPosition, Direction direction)
-        {
-            var (x, y) = currentPosition;
-            switch (direction)
-            {
-                case Direction.Up:
-                    return (x, y + 1);
-                case Direction.Right:
-                    return (x + 1, y);
-                case Direction.Down:
-                    return (x, y - 1);
-                case Direction.Left:
-                    return (x - 1, y);
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(direction), direction, null);
-            }
-        }
-
-        public static Direction Turn(Direction currentDirection, int turnDirection)
-        {
-            if (turnDirection == 0) // Left 90 degrees
-            {
-                switch (currentDirection)
-                {
-                    case Direction.Up:
-                        return Direction.Left;
-                    case Direction.Right:
-                        return Direction.Up;
-                    case Direction.Down:
-                        return Direction.Right;
-                    case Direction.Left:
-                        return Direction.Down;
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(currentDirection), currentDirection, null);
-                }
-            }
-            else // Right 90 degrees
-            {
-                switch (currentDirection)
-                {
-                    case Direction.Up:
-                        return Direction.Right;
-                    case Direction.Right:
-                        return Direction.Down;
-                    case Direction.Down:
-                        return Direction.Left;
-                    case Direction.Left:
-                        return Direction.Up;
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(currentDirection), currentDirection, null);
-                }
-            }
-        }
-    }
-
-    public enum Direction
-    {
-        Up,
-        Right,
-        Down,
-        Left
     }
 }
