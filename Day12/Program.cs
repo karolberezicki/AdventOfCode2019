@@ -28,7 +28,6 @@ namespace Day12
         private static long GetCycle(IEnumerable<string> input, Dimension dimension)
         {
             var moons = GetMoons(input);
-            var hashCodes = new HashSet<string>();
 
             long step = 0;
 
@@ -47,20 +46,13 @@ namespace Day12
                     moon.ApplyVelocity(dimension);
                 }
 
-                var hashCode = string.Join(";",
-                    moons.Select(m => m.Position[dimension])
-                        .Concat(moons.Select(m => m.Velocity[dimension])));
-
-                if (hashCodes.Contains(hashCode))
-                {
-                    break;
-                }
-
-                hashCodes.Add(hashCode);
                 step++;
-            }
 
-            return step;
+                if (moons.Select(m => m.Velocity[dimension]).All(v => v == 0))
+                {
+                    return step * 2;
+                }
+            }
         }
 
         private static int Part1(IEnumerable<string> input)
