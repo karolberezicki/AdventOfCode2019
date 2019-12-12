@@ -1,73 +1,65 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Day12
 {
-    [DebuggerDisplay("pos=<x={X}, y= {Y}, z= {Z}>, vel=<x= {Vx}, y= {Vy}, z= {Vz}>")]
+    [DebuggerDisplay("pos=<x={Position[Dimension.X]}, y= {Position[Dimension.Y]}, z= {Position[Dimension.Z]}>, vel=<x= {Velocity[Dimension.X]}, y= {Velocity[Dimension.Y]}, z= {Velocity[Dimension.Z]}>")]
     public class Moon
     {
+        public Dictionary<Dimension, int> Position;
+        public Dictionary<Dimension, int> Velocity;
+
         public Moon(int x, int y, int z)
         {
-            X = x;
-            Y = y;
-            Z = z;
-        }
+            Position = new Dictionary<Dimension, int>();
+            Velocity = new Dictionary<Dimension, int>();
 
-        public int X { get; set; }
-        public int Y { get; set; }
-        public int Z { get; set; }
-        public int Vx { get; set; }
-        public int Vy { get; set; }
-        public int Vz { get; set; }
+            Position[Dimension.X] = x;
+            Position[Dimension.Y] = y;
+            Position[Dimension.Z] = z;
+
+            Velocity[Dimension.X] = 0;
+            Velocity[Dimension.Y] = 0;
+            Velocity[Dimension.Z] = 0;
+        }
 
         public void ApplyGravity(Moon moon)
         {
-            if (X < moon.X)
+            ApplyGravity(Dimension.X, moon);
+            ApplyGravity(Dimension.Y, moon);
+            ApplyGravity(Dimension.Z, moon);
+        }
+
+        public void ApplyGravity(Dimension dimension, Moon moon)
+        {
+            if (Position[dimension] < moon.Position[dimension])
             {
-                Vx += 1;
-                moon.Vx -= 1;
+                Velocity[dimension] += 1;
+                moon.Velocity[dimension] -= 1;
             }
 
-            if (X > moon.X)
+            if (Position[dimension] > moon.Position[dimension])
             {
-                Vx -= 1;
-                moon.Vx += 1;
+                Velocity[dimension] -= 1;
+                moon.Velocity[dimension] += 1;
             }
+        }
 
-            if (Y < moon.Y)
-            {
-                Vy += 1;
-                moon.Vy -= 1;
-            }
-
-            if (Y > moon.Y)
-            {
-                Vy -= 1;
-                moon.Vy += 1;
-            }
-
-            if (Z < moon.Z)
-            {
-                Vz += 1;
-                moon.Vz -= 1;
-            }
-
-            if (Z > moon.Z)
-            {
-                Vz -= 1;
-                moon.Vz += 1;
-            }
+        public void ApplyVelocity(Dimension dimension)
+        {
+            Position[dimension] += Velocity[dimension];
         }
 
         public void ApplyVelocity()
         {
-            X += Vx;
-            Y += Vy;
-            Z += Vz;
+            ApplyVelocity(Dimension.X);
+            ApplyVelocity(Dimension.Y);
+            ApplyVelocity(Dimension.Z);
         }
 
-        public int PotentialEnergy => Math.Abs(X) + Math.Abs(Y) + Math.Abs(Z);
-        public int KineticEnergy => Math.Abs(Vx) + Math.Abs(Vy) + Math.Abs(Vz);
+        public int PotentialEnergy => Math.Abs(Position[Dimension.X]) + Math.Abs(Position[Dimension.Y]) + Math.Abs(Position[Dimension.Z]);
+        public int KineticEnergy => Math.Abs(Velocity[Dimension.X]) + Math.Abs(Velocity[Dimension.Y]) + Math.Abs(Velocity[Dimension.Z]);
         public int TotalEnergy => PotentialEnergy * KineticEnergy;
     }
 }
