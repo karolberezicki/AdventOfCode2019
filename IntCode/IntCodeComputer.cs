@@ -35,7 +35,7 @@ namespace IntCode
             }
         }
 
-        public void RunIntCode()
+        public void RunIntCode(BreakMode breakMode = BreakMode.Output)
         {
             while (!IsHalted)
             {
@@ -68,6 +68,11 @@ namespace IntCode
                         }
                     case OpCode.Input:
                         {
+                            if (breakMode == BreakMode.Input && _inputPointer >= Inputs.Count)
+                            {
+                                return;
+                            }
+
                             WriteMem(modeParam1, _instructionPointer + 1, Inputs[(int)_inputPointer]);
                             _inputPointer++;
                             _instructionPointer += 2;
@@ -78,7 +83,12 @@ namespace IntCode
                             var param2Value = GetParamValue(modeParam1, _instructionPointer + 1);
                             Output.Add(param2Value);
                             _instructionPointer += 2;
-                            return;
+
+                            if (breakMode == BreakMode.Output)
+                            {
+                                return;
+                            }
+                            break;
                         }
                     case OpCode.JumpIfTrue:
                         {
@@ -104,7 +114,6 @@ namespace IntCode
                         }
                     case OpCode.Equals:
                         {
-
                             var param1Value = GetParamValue(modeParam1, _instructionPointer + 1);
                             var param2Value = GetParamValue(modeParam2, _instructionPointer + 2);
                             WriteMem(modeParam3, _instructionPointer + 3, param1Value == param2Value ? 1 : 0);
@@ -167,14 +176,19 @@ namespace IntCode
             return character - '0';
         }
 
+        public void SetAddress(long address, long value)
+        {
+            _intCode[address] = value;
+        }
+
         public void SetNoun(long noun)
         {
-            _intCode[1] = noun;
+            SetAddress(1, noun);
         }
 
         public void SetVerb(long verb)
         {
-            _intCode[2] = verb;
+            SetAddress(2, verb);
         }
 
         public long ReadIntCode(long address)

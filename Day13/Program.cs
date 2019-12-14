@@ -9,6 +9,8 @@ namespace Day13
     {
         public static void Main()
         {
+            Console.CursorVisible = false;
+
             var input = System.IO.File.ReadAllText("input.txt");
 
             var memoryState = input.Split(",")
@@ -16,67 +18,95 @@ namespace Day13
                 .ToList();
 
             var part1 = Part1(memoryState);
+            var part2 = Part2(memoryState);
+
             Console.WriteLine($"Part1 {part1}");
+            Console.WriteLine($"Part2 {part2}");
         }
 
         private static int Part1(IEnumerable<long> memoryState)
         {
             var icc = new IntCodeComputer(memoryState);
             icc.RunTillHalt();
-            var screenOutput = icc.Output;
-            var tiles = GetTiles(screenOutput);
-            Display(tiles);
-            return tiles.Count(t => t.Id == 2);
+            Display(icc.Output);
+            var tiles = new Dictionary<(long X, long Y), long>();
+            UpdateTiles(tiles, icc.Output);
+            return tiles.Count(t => t.Value == 2);
         }
 
-        private static HashSet<(long X, long Y, long Id)> GetTiles(List<long> screenOutput)
+        private static long Part2(IEnumerable<long> memoryState)
         {
-            var tiles = new HashSet<(long X, long Y, long Id)>();
 
+            var icc = new IntCodeComputer(memoryState);
+            icc.SetAddress(0, 2);
+
+            var tiles = new Dictionary<(long X, long Y), long>();
+
+            Console.SetCursorPosition(0, 20);
+            Console.WriteLine(new string('█', 44));
+
+            while (!icc.IsHalted)
+            {
+                icc.RunIntCode(BreakMode.Input);
+                Display(icc.Output);
+                UpdateTiles(tiles, icc.Output);
+                icc.Output.Clear();
+
+                var ball = tiles.First(t => t.Value == 4).Key;
+                var paddle = tiles.First(t => t.Value == 3).Key;
+
+                icc.Inputs.Add(Math.Sign(ball.X - paddle.X));
+            }
+
+            return tiles[(-1, 0)];
+        }
+
+        private static void Display(IReadOnlyList<long> screenOutput)
+        {
+            for (var i = 0; i < screenOutput.Count; i += 3)
+            {
+                var x = (int)screenOutput[i];
+                var y = (int)screenOutput[i + 1];
+                var tileId = screenOutput[i + 2];
+
+                if (x == -1)
+                {
+                    Console.SetCursorPosition(0, 21);
+                    Console.WriteLine($"Score: {tileId:D5}");
+                    continue;
+                }
+
+                Console.SetCursorPosition(x, y);
+                switch (tileId)
+                {
+                    case 1:
+                        Console.Write("█");
+                        break;
+                    case 2:
+                        Console.Write("░");
+                        break;
+                    case 3:
+                        Console.Write("═");
+                        break;
+                    case 4:
+                        Console.Write("o");
+                        break;
+                    default:
+                        Console.Write(" ");
+                        break;
+                }
+            }
+        }
+
+        private static void UpdateTiles(Dictionary<(long X, long Y), long> tiles, IReadOnlyList<long> screenOutput)
+        {
             for (var i = 0; i < screenOutput.Count; i += 3)
             {
                 var x = screenOutput[i];
                 var y = screenOutput[i + 1];
                 var tileId = screenOutput[i + 2];
-                tiles.Add((x, y, tileId));
+                tiles[(x, y)] = tileId;
             }
-
-            return tiles;
-        }
-
-        public static void Display(HashSet<(long X, long Y, long Id)> tiles)
-        {
-            Console.Clear();
-
-            for (var y = 0; y < 20; y++)
-            {
-                for (var x = 0; x < 44; x++)
-                {
-                    var (_, _, id) = tiles.FirstOrDefault(t => t.X == x && t.Y == y);
-                    switch (id)
-                    {
-                        case 1:
-                            Console.Write("█");
-                            break;
-                        case 2:
-                            Console.Write("░");
-                            break;
-                        case 3:
-                            Console.Write("═");
-                            break;
-                        case 4:
-                            Console.Write("o");
-                            break;
-                        default:
-                            Console.Write(" ");
-                            break;
-                    }
-                }
-                Console.WriteLine();
-            }
-
-            var (_, _, score) = tiles.FirstOrDefault(t => t.X == -1 && t.Y == 0);
-            Console.WriteLine($"Score: {score:D6}");
         }
     }
 }
