@@ -59,7 +59,7 @@ namespace Day11
                 var currentPanelColor = paintedPanels
                     .LastOrDefault(p => p.X == currentPosition.X && p.Y == currentPosition.Y).Color;
 
-                icc.Inputs.Add(currentPanelColor);
+                icc.Inputs.Enqueue(currentPanelColor);
 
                 icc.RunIntCode();
                 var colorToPaint = (int)icc.Output.Last();

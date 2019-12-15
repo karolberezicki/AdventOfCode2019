@@ -59,7 +59,7 @@ namespace Day07
                 {
                     foreach (var amp in amps)
                     {
-                        amp.Inputs.Add(signal);
+                        amp.Inputs.Enqueue(signal);
                         amp.RunIntCode();
                         signal = amp.Output.Last();
                     }

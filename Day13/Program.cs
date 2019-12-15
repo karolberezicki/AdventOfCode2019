@@ -28,9 +28,10 @@ namespace Day13
         {
             var icc = new IntCodeComputer(memoryState);
             icc.RunTillHalt();
-            Display(icc.Output);
+            var screenOutput = icc.Output.ToList();
+            Display(screenOutput);
             var tiles = new Dictionary<(long X, long Y), long>();
-            UpdateTiles(tiles, icc.Output);
+            UpdateTiles(tiles, screenOutput);
             return tiles.Count(t => t.Value == 2);
         }
 
@@ -48,14 +49,15 @@ namespace Day13
             while (!icc.IsHalted)
             {
                 icc.RunIntCode(BreakMode.Input);
-                Display(icc.Output);
-                UpdateTiles(tiles, icc.Output);
+                var screenOutput = icc.Output.ToList();
+                Display(screenOutput);
+                UpdateTiles(tiles, screenOutput);
                 icc.Output.Clear();
 
                 var ball = tiles.First(t => t.Value == 4).Key;
                 var paddle = tiles.First(t => t.Value == 3).Key;
 
-                icc.Inputs.Add(Math.Sign(ball.X - paddle.X));
+                icc.Inputs.Enqueue(Math.Sign(ball.X - paddle.X));
             }
 
             return tiles[(-1, 0)];

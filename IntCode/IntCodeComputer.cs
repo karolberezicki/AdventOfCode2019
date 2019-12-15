@@ -12,17 +12,15 @@ namespace IntCode
                 .Select((s, i) => new { s, i = Convert.ToInt64(i) })
                 .ToDictionary(x => x.i, x => x.s);
 
-            Inputs = new List<long>();
-            Inputs.AddRange(inputs);
-            Output = new List<long>();
+            Inputs = new Queue<long>(inputs);
+            Output = new Queue<long>();
         }
 
-        public List<long> Inputs { get; set; }
-        public List<long> Output { get; set; }
+        public Queue<long> Inputs { get; set; }
+        public Queue<long> Output { get; set; }
 
         private readonly Dictionary<long, long> _intCode;
         private long _instructionPointer;
-        private long _inputPointer;
         private long _relativeBase;
         public long ExecutedInstructions { get; private set; }
         public bool IsHalted { get; private set; }
@@ -68,20 +66,19 @@ namespace IntCode
                         }
                     case OpCode.Input:
                         {
-                            if (breakMode == BreakMode.Input && _inputPointer >= Inputs.Count)
+                            if (breakMode == BreakMode.Input && Inputs.Count == 0)
                             {
                                 return;
                             }
 
-                            WriteMem(modeParam1, _instructionPointer + 1, Inputs[(int)_inputPointer]);
-                            _inputPointer++;
+                            WriteMem(modeParam1, _instructionPointer + 1, Inputs.Dequeue());
                             _instructionPointer += 2;
                             break;
                         }
                     case OpCode.Output:
                         {
                             var param2Value = GetParamValue(modeParam1, _instructionPointer + 1);
-                            Output.Add(param2Value);
+                            Output.Enqueue(param2Value);
                             _instructionPointer += 2;
 
                             if (breakMode == BreakMode.Output)
