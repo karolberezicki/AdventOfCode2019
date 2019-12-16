@@ -18,6 +18,67 @@ namespace Day15
 
             var map = GenerateMap(memoryState);
             DisplayMaze(map);
+
+            var start = (X: 0, Y: 0);
+            var oxygen = map.First(v => v.Value == StatusCode.OxygenSystem).Key;
+            var fewestMovementCommands = FindShortestDistance(map, start, oxygen);
+            var emptyAreas = map
+                .Where(p => p.Value == StatusCode.Move)
+                .Select(p => p.Key)
+                .ToList();
+
+            // TODO - This is totally inefficient, but works - change to real flooding
+            var minutesToFillAreaWithOxygen = emptyAreas
+                .Select(a => FindShortestDistance(map, oxygen, a))
+                .Max();
+
+            Console.WriteLine($"Part1 {fewestMovementCommands}");
+            Console.WriteLine($"Part2 {minutesToFillAreaWithOxygen}");
+        }
+
+        private static int FindShortestDistance(Dictionary<(int X, int Y), StatusCode> map, (int X, int Y) start, (int X, int Y) target)
+        {
+            var statesQueue = new Queue<(int X, int Y, int Distance)>(new[] { (start.X, start.Y, 0) });
+            (int X, int Y, int Distance) finishState = (0, 0, int.MaxValue);
+
+
+            while (statesQueue.Count > 0)
+            {
+                var currentState = statesQueue.Dequeue();
+
+                if (currentState.X == target.X && currentState.Y == target.Y && currentState.Distance < finishState.Distance)
+                {
+                    finishState = currentState;
+                }
+                else
+                {
+                    var possibleMoves = new HashSet<(int X, int Y, int Distance)>
+                    {
+                        (currentState.X + 1, currentState.Y, currentState.Distance + 1),
+                        (currentState.X - 1, currentState.Y, currentState.Distance + 1),
+                        (currentState.X, currentState.Y + 1, currentState.Distance + 1),
+                        (currentState.X, currentState.Y - 1, currentState.Distance + 1)
+                    };
+
+                    if (finishState != default)
+                    {
+                        possibleMoves =
+                            new HashSet<(int X, int Y, int Distance)>(possibleMoves.Where(move =>
+                                move.Distance < finishState.Distance));
+                    }
+
+                    foreach (var newState in possibleMoves)
+                    {
+                        var position = (newState.X, newState.Y);
+                        if (map.ContainsKey(position) && map[position] != StatusCode.Wall && !statesQueue.Contains(newState))
+                        {
+                            statesQueue.Enqueue(newState);
+                        }
+                    }
+                }
+            }
+
+            return finishState.Distance;
         }
 
         private static Dictionary<(int X, int Y), StatusCode> GenerateMap(IEnumerable<long> memoryState)
