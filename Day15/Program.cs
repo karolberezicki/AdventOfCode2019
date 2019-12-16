@@ -7,10 +7,6 @@ namespace Day15
 {
     public class Program
     {
-        private static IntCodeComputer _icc;
-        private static (int X, int Y) _currentPosition;
-        private static Dictionary<(int X, int Y), int> _visited;
-        private static Dictionary<(int X, int Y), StatusCode> _map;
 
         public static void Main()
         {
@@ -20,62 +16,68 @@ namespace Day15
                 .Select(long.Parse)
                 .ToList();
 
-            _icc = new IntCodeComputer(memoryState);
-            _currentPosition = (X: 0, Y: 0);
-            _visited = new Dictionary<(int X, int Y), int> { [_currentPosition] = 1 };
-            _map = new Dictionary<(int X, int Y), StatusCode>();
+            var map = GenerateMap(memoryState);
+            DisplayMaze(map);
+        }
 
-            while (_visited.Values.Min() < 3)
+        private static Dictionary<(int X, int Y), StatusCode> GenerateMap(IEnumerable<long> memoryState)
+        {
+            var map = new Dictionary<(int X, int Y), StatusCode>();
+            var icc = new IntCodeComputer(memoryState);
+            var currentPosition = (X: 0, Y: 0);
+            var visited = new Dictionary<(int X, int Y), int> { [currentPosition] = 1 };
+
+            while (visited.Values.Min() < 3)
             {
                 var possibleMoves =
                     ((Direction[])Enum.GetValues(typeof(Direction)))
-                    .Select(d => (Direction: d, StatusCode: CheckDirection(d)))
+                    .Select(d => (Direction: d, StatusCode: CheckDirection(icc, d)))
                     .ToList();
 
-                var nextMove = (Position: (_currentPosition), VisitCount: int.MaxValue, Direction: Direction.North);
+                var nextMove = (Position: currentPosition, VisitCount: int.MaxValue, Direction: Direction.North);
                 foreach (var (direction, statusCode) in possibleMoves)
                 {
                     var movePosition = direction switch
                     {
-                        Direction.North => (_currentPosition.X, _currentPosition.Y - 1),
-                        Direction.South => (_currentPosition.X, _currentPosition.Y + 1),
-                        Direction.West => (_currentPosition.X - 1, _currentPosition.Y),
-                        Direction.East => (_currentPosition.X + 1, _currentPosition.Y),
+                        Direction.North => (currentPosition.X, currentPosition.Y - 1),
+                        Direction.South => (currentPosition.X, currentPosition.Y + 1),
+                        Direction.West => (currentPosition.X - 1, currentPosition.Y),
+                        Direction.East => (currentPosition.X + 1, currentPosition.Y),
                         _ => default
                     };
 
-                    _map[movePosition] = statusCode;
-                    var visitCount = _visited.ContainsKey(movePosition) ? _visited[movePosition] : 0;
+                    map[movePosition] = statusCode;
+                    var visitCount = visited.ContainsKey(movePosition) ? visited[movePosition] : 0;
                     if (statusCode != StatusCode.Wall && nextMove.VisitCount >= visitCount)
                     {
                         nextMove = (movePosition, visitCount, direction);
                     }
                 }
 
-                Move(nextMove.Direction);
-                _currentPosition = nextMove.Position;
-                _visited[_currentPosition] = nextMove.VisitCount + 1;
+                Move(icc, nextMove.Direction);
+                currentPosition = nextMove.Position;
+                visited[currentPosition] = nextMove.VisitCount + 1;
             }
 
-            DisplayMaze(_map);
+            return map;
         }
 
-        public static StatusCode CheckDirection(Direction direction)
+        private static StatusCode CheckDirection(IntCodeComputer icc, Direction direction)
         {
-            var status = Move(direction);
+            var status = Move(icc, direction);
             if (status != StatusCode.Wall)
             {
-                Move(direction.TurnAround());
+                Move(icc, direction.TurnAround());
             }
             return status;
         }
 
-        public static StatusCode Move(Direction direction)
+        private static StatusCode Move(IntCodeComputer icc, Direction direction)
         {
-            _icc.RunIntCode(BreakMode.Input);
-            _icc.Inputs.Enqueue((long)direction);
-            _icc.RunIntCode();
-            return (StatusCode)_icc.Output.Dequeue();
+            icc.RunIntCode(BreakMode.Input);
+            icc.Inputs.Enqueue((long)direction);
+            icc.RunIntCode();
+            return (StatusCode)icc.Output.Dequeue();
         }
 
         private static void DisplayMaze(Dictionary<(int X, int Y), StatusCode> maze)
