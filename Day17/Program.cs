@@ -17,6 +17,26 @@ namespace Day17
 
             var part1 = Part1(memoryState);
             Console.WriteLine($"Part1 {part1}");
+
+            var icc = new IntCodeComputer(memoryState);
+            icc.SetAddress(0, 2);
+
+            // TODO: Go through scaffolding via code
+            const string subroutineA = "L,4,R,8,L,6,L,10";
+            const string subroutineB = "L,6,R,8,R,10,L,6,L,6";
+            const string subroutineC = "L,4,L,4,L,10";
+            const string mainRoutine = "A,B,A,B,C,C,B,A,B,C";
+
+            var robotInput = string.Join("\n", mainRoutine, subroutineA, subroutineB, subroutineC, "n", "");
+            foreach (var i in robotInput)
+            {
+                icc.Inputs.Enqueue(i);
+            }
+
+            icc.RunTillHalt();
+
+            var part2 = icc.Output.Last();
+            Console.WriteLine($"Part2 {part2}");
         }
 
         private static int Part1(IEnumerable<long> memoryState)
