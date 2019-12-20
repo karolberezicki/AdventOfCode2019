@@ -6,84 +6,93 @@ namespace Day20
 {
     public class Program
     {
+        private static Dictionary<(int X, int Y), char> _maze;
+        private static Dictionary<string, HashSet<(int X, int Y)>> _labels;
+        private static Dictionary<(int X, int Y), (int X, int Y)> _portals;
+        private static (int XMin, int YMin, int XMax, int YMax) _boundaries;
+
         public static void Main()
         {
-            var input = System.IO.File.ReadAllLines("input.txt")
+            var input = System.IO.File.ReadAllLines("test2.txt")
                 .ToList();
 
-            var maze = GenerateMaze(input);
+            GenerateMaze(input);
+            GenerateLabels();
+            GeneratePortals();
 
-            var labels = new Dictionary<string, HashSet<(int X, int Y)>>();
-            var portals = new Dictionary<(int X, int Y), (int X, int Y)>();
-
-
-            foreach (var (x, y) in maze.Keys)
-            {
-                if (maze.ContainsKey((x, y + 1)) && char.IsLetter(maze[(x, y)]) && char.IsLetter(maze[(x, y + 1)]))
-                {
-                    var key = $"{maze[(x, y)]}{maze[(x, y + 1)]}";
-                    if (!labels.ContainsKey(key))
-                    {
-                        labels[key] = new HashSet<(int X, int Y)>();
-                    }
-
-                    if (maze.ContainsKey((x, y + 2)) && maze[(x, y + 2)] == '.')
-                    {
-                        labels[key].Add((x, y + 2));
-
-                    }
-                    else if (maze.ContainsKey((x, y - 2)) && maze[(x, y - 2)] == '.')
-                    {
-                        labels[key].Add((x, y - 2));
-                    }
-
-
-                }
-
-                if (maze.ContainsKey((x + 1, y)) && char.IsLetter(maze[(x, y)]) && char.IsLetter(maze[(x + 1, y)]))
-                {
-                    var key = $"{maze[(x, y)]}{maze[(x + 1, y)]}";
-                    if (!labels.ContainsKey(key))
-                    {
-                        labels[key] = new HashSet<(int X, int Y)>();
-                    }
-                    if (maze.ContainsKey((x + 2, y)) && maze[(x + 2, y)] == '.')
-                    {
-                        labels[key].Add((x + 2, y));
-                    }
-                    else if (maze.ContainsKey((x - 2, y)) && maze[(x - 2, y)] == '.')
-                    {
-                        labels[key].Add((x - 2, y));
-                    }
-                }
-            }
-
-            var start = (0, 0);
-            var target = (0, 0);
-
-            foreach (var label in labels)
-            {
-                switch (label.Key)
-                {
-                    case "AA":
-                        start = label.Value.First();
-                        break;
-                    case "ZZ":
-                        target = label.Value.First();
-                        break;
-                    default:
-                        portals.Add(label.Value.First(), label.Value.Last());
-                        portals.Add(label.Value.Last(), label.Value.First());
-                        break;
-                }
-            }
-
-            var part1 = FindShortestDistance(maze, portals, start, target);
-
+            var part1 = Part1();
             Console.WriteLine($"Part1 {part1}");
         }
 
-        private static int FindShortestDistance(Dictionary<(int X, int Y), char> map, Dictionary<(int X, int Y), (int X, int Y)> portals, (int X, int Y) start, (int X, int Y) target)
+        private static bool IsOuterEdge((int X, int Y) coordinate)
+        {
+            return _boundaries.XMin == coordinate.X
+                   || _boundaries.XMax == coordinate.X
+                   || _boundaries.YMax == coordinate.Y
+                   || _boundaries.YMax == coordinate.Y;
+        }
+
+        private static int Part1()
+        {
+            var start = _labels["AA"].First();
+            var target = _labels["ZZ"].First();
+            return FindShortestDistanceThroughPortals(start, target);
+        }
+
+        private static void GeneratePortals()
+        {
+            _portals = new Dictionary<(int X, int Y), (int X, int Y)>();
+            foreach (var (label, points) in _labels)
+            {
+                switch (label)
+                {
+                    case "AA":
+                    case "ZZ":
+                        break;
+                    default:
+                        _portals.Add(points.First(), points.Last());
+                        _portals.Add(points.Last(), points.First());
+                        break;
+                }
+            }
+        }
+
+        private static void GenerateLabels()
+        {
+            _labels = new Dictionary<string, HashSet<(int X, int Y)>>();
+
+            foreach (var (x, y) in _maze.Keys)
+            {
+                AssignLabel(x, y, 1, 0);
+                AssignLabel(x, y, -1, 0);
+                AssignLabel(x, y, 0, 1);
+                AssignLabel(x, y, 0, -1);
+            }
+        }
+
+        private static void AssignLabel(int x, int y, int dx, int dy)
+        {
+            if (
+                _maze[(x, y)] == '.'
+                && _maze.ContainsKey((x + dx, y + dy))
+                && _maze.ContainsKey((x + dx * 2, y + dy * 2))
+                && char.IsLetter(_maze[(x + dx, y + dy)])
+                && char.IsLetter(_maze[(x + dx * 2, y + dy * 2)]))
+            {
+                var key = dx < 0 || dy < 0
+                    ? $"{_maze[(x + dx * 2, y + dy * 2)]}{_maze[(x + dx, y + dy)]}"
+                    : $"{_maze[(x + dx, y + dy)]}{_maze[(x + dx * 2, y + dy * 2)]}";
+
+                if (!_labels.ContainsKey(key))
+                {
+                    _labels[key] = new HashSet<(int X, int Y)>();
+                }
+
+                _labels[key].Add((x, y));
+            }
+        }
+
+        private static int FindShortestDistance((int X, int Y) start, (int X, int Y) target)
         {
             var statesQueue = new Queue<(int X, int Y, int Distance)>(new[] { (start.X, start.Y, 0) });
             (int X, int Y, int Distance) finishState = (0, 0, int.MaxValue);
@@ -107,10 +116,60 @@ namespace Day20
                         (currentState.X, currentState.Y - 1, currentState.Distance + 1)
                     };
 
-                    if (portals.ContainsKey((currentState.X, currentState.Y)))
+                    if (finishState != default)
                     {
-                        var (portalDestinationX, portalDestinationY) = portals[(currentState.X, currentState.Y)];
-                        possibleMoves.Add((portalDestinationX, portalDestinationY, currentState.Distance + 2));
+                        possibleMoves =
+                            new HashSet<(int X, int Y, int Distance)>(possibleMoves.Where(move =>
+                                move.Distance < finishState.Distance));
+                    }
+
+                    foreach (var newState in possibleMoves)
+                    {
+                        var position = (newState.X, newState.Y);
+                        var toExplore = _maze.ContainsKey(position)
+                                          && _maze[position] == '.'
+                                          && !visited.Contains(position)
+                                          && !statesQueue.Contains(newState);
+                        if (toExplore)
+                        {
+                            visited.Add(position);
+                            statesQueue.Enqueue(newState);
+                        }
+                    }
+                }
+            }
+
+            return finishState.Distance;
+        }
+
+        private static int FindShortestDistanceThroughPortals((int X, int Y) start, (int X, int Y) target)
+        {
+            var statesQueue = new Queue<(int X, int Y, int Distance)>(new[] { (start.X, start.Y, 0) });
+            (int X, int Y, int Distance) finishState = (0, 0, int.MaxValue);
+            var visited = new HashSet<(int X, int Y)> { start };
+
+            while (statesQueue.Count > 0)
+            {
+                var currentState = statesQueue.Dequeue();
+
+                if (currentState.X == target.X && currentState.Y == target.Y && currentState.Distance < finishState.Distance)
+                {
+                    finishState = currentState;
+                }
+                else
+                {
+                    var possibleMoves = new HashSet<(int X, int Y, int Distance)>
+                    {
+                        (currentState.X + 1, currentState.Y, currentState.Distance + 1),
+                        (currentState.X - 1, currentState.Y, currentState.Distance + 1),
+                        (currentState.X, currentState.Y + 1, currentState.Distance + 1),
+                        (currentState.X, currentState.Y - 1, currentState.Distance + 1)
+                    };
+
+                    if (_portals.ContainsKey((currentState.X, currentState.Y)))
+                    {
+                        var (portalDestinationX, portalDestinationY) = _portals[(currentState.X, currentState.Y)];
+                        possibleMoves.Add((portalDestinationX, portalDestinationY, currentState.Distance + 1));
                     }
 
                     if (finishState != default)
@@ -123,10 +182,11 @@ namespace Day20
                     foreach (var newState in possibleMoves)
                     {
                         var position = (newState.X, newState.Y);
-                        if (map.ContainsKey(position)
-                            && map[position] == '.'
-                            && !visited.Contains(position)
-                            && !statesQueue.Contains(newState))
+                        var toExplore = _maze.ContainsKey(position)
+                                          && _maze[position] == '.'
+                                          && !visited.Contains(position)
+                                          && !statesQueue.Contains(newState);
+                        if (toExplore)
                         {
                             visited.Add(position);
                             statesQueue.Enqueue(newState);
@@ -138,18 +198,22 @@ namespace Day20
             return finishState.Distance;
         }
 
-        private static Dictionary<(int X, int Y), char> GenerateMaze(List<string> input)
+        private static void GenerateMaze(List<string> input)
         {
-            var maze = new Dictionary<(int X, int Y), char>();
+            _maze = new Dictionary<(int X, int Y), char>();
             for (var y = 0; y < input.Count; y++)
             {
                 for (var x = 0; x < input[0].Length; x++)
                 {
-                    maze[(x, y)] = input[y][x];
+                    _maze[(x, y)] = input[y][x];
                 }
             }
 
-            return maze;
+            _boundaries = (
+                XMin: _maze.Where(v => v.Value == '#').Select(c => c.Key.X).Min(),
+                YMin: _maze.Where(v => v.Value == '#').Select(c => c.Key.Y).Min(),
+                XMax: _maze.Where(v => v.Value == '#').Select(c => c.Key.X).Max(),
+                YMax: _maze.Where(v => v.Value == '#').Select(c => c.Key.Y).Max());
         }
     }
 }
