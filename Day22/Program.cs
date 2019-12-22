@@ -12,54 +12,56 @@ namespace Day22
                 .ToList();
 
             var shuffleInstructions = ParseInput(input);
-            const int spaceCardsCount = 10007;
-            var deck = Enumerable.Range(0, spaceCardsCount).ToList();
+            var part1 = Shuffle(shuffleInstructions, 2019, 10007);
+            Console.WriteLine($"Part1 {part1}");
 
+            // Naive solution, that will take too long to complete :(
+            var card2020Index = 2020L;
+            for (var i = 0L; i <= 101741582076661; i++)
+            {
+                card2020Index = Shuffle(shuffleInstructions, card2020Index, 119315717514047);
+            }
 
-            var s = deck.Sum();
+            var part2 = card2020Index;
+            Console.WriteLine($"Part2 {part2}");
+        }
+
+        private static long Shuffle(IEnumerable<(Techniques Technique, int Value)> shuffleInstructions, long card, long cardsCount)
+        {
+            var cardIndex = card;
+
             foreach (var (technique, value) in shuffleInstructions)
             {
                 switch (technique)
                 {
                     case Techniques.DealIntoNewStack:
-                        deck.Reverse();
+                        cardIndex = cardsCount - cardIndex - 1;
                         break;
                     case Techniques.Cut:
                         if (value > 0)
                         {
-                            var top = deck.Take(value);
-                            var bottom = deck.Skip(value);
-                            deck = bottom.Concat(top).ToList();
+                            cardIndex = cardsCount - value + cardIndex;
                         }
                         else
                         {
-                            var top = deck.Take(deck.Count + value);
-                            var bottom = deck.Skip(deck.Count + value);
-                            deck = bottom.Concat(top).ToList();
+                            cardIndex -= value;
+                        }
+                        if (cardIndex > cardsCount)
+                        {
+                            cardIndex -= cardsCount;
                         }
                         break;
                     case Techniques.DealWithIncrement:
-                        var updatedDeck = Enumerable.Range(0, spaceCardsCount)
-                            .Select(i => int.MaxValue)
-                            .ToList();
-
-                        var index = 0;
-                        foreach (var deckValue in deck)
-                        {
-                            updatedDeck[index] = deckValue;
-                            index += value;
-                            index = index < deck.Count ? index : index - deck.Count;
-                        }
-                        deck = updatedDeck;
+                        var a = cardIndex * value;
+                        var b = (long)(1.0d * value * cardIndex / cardsCount);
+                        cardIndex = a - b * cardsCount;
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
             }
 
-            var part1 = deck.IndexOf(2019);
-
-            Console.WriteLine($"Part1 {part1}");
+            return cardIndex;
         }
 
         private static List<(Techniques Technique, int Value)> ParseInput(IEnumerable<string> input)
@@ -78,12 +80,4 @@ namespace Day22
             }).ToList();
         }
     }
-
-    public enum Techniques
-    {
-        DealIntoNewStack,
-        Cut,
-        DealWithIncrement
-    }
-
 }
