@@ -60,12 +60,8 @@ namespace Day20
                         possibleMoves.Add((portalDestinationX, portalDestinationY, currentState.Distance + 1));
                     }
 
-                    if (finishState != default)
-                    {
-                        possibleMoves =
-                            new HashSet<(int X, int Y, int Distance)>(possibleMoves.Where(move =>
-                                move.Distance < finishState.Distance));
-                    }
+                    possibleMoves = new HashSet<(int X, int Y, int Distance)>(
+                        possibleMoves.Where(move => move.Distance < finishState.Distance));
 
                     foreach (var newState in possibleMoves)
                     {
@@ -116,19 +112,11 @@ namespace Day20
                         var portalLevel = IsOuterEdge((currentState.X, currentState.Y))
                             ? currentState.Level - 1
                             : currentState.Level + 1;
-
-                        if (portalLevel >= 0)
-                        {
-                            possibleMoves.Add((portalDestinationX, portalDestinationY, currentState.Distance + 1, portalLevel));
-                        }
+                        possibleMoves.Add((portalDestinationX, portalDestinationY, currentState.Distance + 1, portalLevel));
                     }
 
-                    if (finishState != default)
-                    {
-                        possibleMoves =
-                            new HashSet<(int X, int Y, int Distance, int Level)>(possibleMoves.Where(move =>
-                                move.Distance < finishState.Distance));
-                    }
+                    possibleMoves = new HashSet<(int X, int Y, int Distance, int Level)>(
+                        possibleMoves.Where(move => move.Distance < finishState.Distance));
 
                     foreach (var newState in possibleMoves)
                     {
@@ -137,7 +125,8 @@ namespace Day20
                         var toExplore = _maze.ContainsKey(positionCoordinates)
                                           && _maze[positionCoordinates] == '.'
                                           && !visited.Contains(position)
-                                          && !statesQueue.Contains(newState);
+                                          && !statesQueue.Contains(newState)
+                                          && newState.Level >= 0;
                         if (toExplore)
                         {
                             visited.Add(position);
@@ -152,10 +141,11 @@ namespace Day20
 
         private static bool IsOuterEdge((int X, int Y) coordinate)
         {
-            return _boundaries.XMin == coordinate.X
-                   || _boundaries.XMax == coordinate.X
-                   || _boundaries.YMin == coordinate.Y
-                   || _boundaries.YMax == coordinate.Y;
+            var (x, y) = coordinate;
+            return _boundaries.XMin == x
+                   || _boundaries.XMax == x
+                   || _boundaries.YMin == y
+                   || _boundaries.YMax == y;
         }
 
         private static void GeneratePortals()
@@ -213,7 +203,7 @@ namespace Day20
 
 
 
-        private static void GenerateMaze(List<string> input)
+        private static void GenerateMaze(IReadOnlyList<string> input)
         {
             _maze = new Dictionary<(int X, int Y), char>();
             for (var y = 0; y < input.Count; y++)
